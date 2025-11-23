@@ -1,26 +1,15 @@
 ---
-# Install Python pip (requires sudo)
-- name: Install python3-pip
-  become: yes
-  apt:
-    name: python3-pip
-    state: present
-    update_cache: yes
-  tags: python
+# Install required Python packages
+- name: Install required Python packages
+  include_tasks: install_dependencies.yml   # Load Python install tasks
 
-# Create a project directory (ALWAYS use absolute paths)
-- name: Create basic HTTP server directory
+# Manage the Apache webserver
+- name: Manage Apache HTTP server
+  include_tasks: apache.yml                 # Load Apache tasks
+
+# Create your custom project directory
+- name: Create app directory
   file:
-    path: /home/{{ ansible_user }}/basic-http-server
-    state: directory
-    mode: '0755'
-  tags: dirs
-
-# Install Apache2 (requires sudo)
-- name: Install apache2
-  become: yes
-  apt:
-    name: apache2
-    state: latest
-    update_cache: yes
-  tags: apache
+    path: "{{ app_dir }}"        # Comes from defaults/main.yml
+    state: directory             # Create directory
+    mode: '0755'                 # Permissions

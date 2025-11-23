@@ -1,0 +1,14 @@
+---
+# List of Python packages we want to install
+python_packages:
+  - python3-pip
+
+# List of Apache packages to install
+apache_packages:
+  - apache2
+
+# Default Apache website directory
+web_dir: "/var/www/html"
+
+# Default directory we want to create for your project
+app_dir: "/home/{{ ansible_user }}/basic-http-server"

@@ -1,0 +1,8 @@
+---
+# Install Python packages such as python3-pip
+- name: Install Python dependencies
+  become: yes          # Installing packages requires sudo
+  apt:
+    name: "{{ python_packages }}"   # Comes from defaults/main.yml
+    state: present     # Ensure package is installed
+    update_cache: yes  # Update apt cache first
