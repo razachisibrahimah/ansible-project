@@ -1,5 +1,5 @@
 ---
 # Title that will appear inside the index.html template
 index_title: "Welcome to Your Apache Server"
-index_description: "Deployed via Ansible role: python project"
+index_description: "Deployed via Ansible role: python"
 
