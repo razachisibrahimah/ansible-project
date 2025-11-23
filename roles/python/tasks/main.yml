@@ -1,0 +1,26 @@
+---
+# Install Python pip (requires sudo)
+- name: Install python3-pip
+  become: yes
+  apt:
+    name: python3-pip
+    state: present
+    update_cache: yes
+  tags: python
+
+# Create a project directory (ALWAYS use absolute paths)
+- name: Create basic HTTP server directory
+  file:
+    path: /home/{{ ansible_user }}/basic-http-server
+    state: directory
+    mode: '0755'
+  tags: dirs
+
+# Install Apache2 (requires sudo)
+- name: Install apache2
+  become: yes
+  apt:
+    name: apache2
+    state: latest
+    update_cache: yes
+  tags: apache

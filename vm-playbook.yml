@@ -1,0 +1,9 @@
+---
+- name: Ansible VM Setup Playbook
+  hosts: kube8master-host     # <— must match the group name in your hosts file
+  become: yes                 # <— enables sudo
+  become_method: sudo
+  become_user: root
+
+  roles:
+    - python
