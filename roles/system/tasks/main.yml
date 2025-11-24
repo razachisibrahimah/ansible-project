@@ -1,0 +1,27 @@
+---
+# Core system provisioning, with feature flags controlling each block.
+
+- name: Include system package installation tasks (optional)
+  include_tasks: packages.yml
+  when: system_enable_packages | bool
+  tags: [system, packages]
+
+- name: Include system user management tasks (optional)
+  include_tasks: users.yml
+  when: system_enable_users | bool
+  tags: [system, users]
+
+- name: Include system hardening tasks (optional)
+  include_tasks: hardening.yml
+  when: system_enable_hardening | bool
+  tags: [system, hardening]
+
+- name: Include firewall configuration tasks (optional)
+  include_tasks: firewall.yml
+  when: system_enable_firewall | bool
+  tags: [system, firewall]
+
+- name: Include directory creation tasks (optional)
+  include_tasks: dirs.yml
+  when: system_enable_dirs | bool
+  tags: [system, dirs]

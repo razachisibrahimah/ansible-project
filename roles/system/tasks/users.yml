@@ -1,0 +1,46 @@
+---
+# Manage system users, SSH keys, and sudo privileges
+
+# -------------------------------------------------------------------
+# 1. Ensure admin user exists
+# This creates a machine user separate from HOST_USER if needed.
+# -------------------------------------------------------------------
+- name: Ensure admin user exists
+  user:
+    name: "{{ system_admin_user | default('sysadmin') }}"
+    shell: /bin/bash
+    create_home: yes
+
+# -------------------------------------------------------------------
+# 2. Ensure ~/.ssh directory exists for admin user
+# -------------------------------------------------------------------
+- name: Ensure SSH directory exists for admin user
+  file:
+    path: "/home/{{ system_admin_user | default('sysadmin') }}/.ssh"
+    state: directory
+    mode: "0700"
+    owner: "{{ system_admin_user | default('sysadmin') }}"
+    group: "{{ system_admin_user | default('sysadmin') }}"
+
+# -------------------------------------------------------------------
+# 3. Add authorized SSH key (optional)
+# You can store SSH public key in group_vars or Vault.
+# -------------------------------------------------------------------
+- name: Add admin user's authorized SSH key
+  copy:
+    dest: "/home/{{ system_admin_user | default('sysadmin') }}/.ssh/authorized_keys"
+    content: "{{ system_admin_ssh_key | default('') }}"
+    owner: "{{ system_admin_user | default('sysadmin') }}"
+    group: "{{ system_admin_user | default('sysadmin') }}"
+    mode: "0600"
+  when: system_admin_ssh_key is defined and system_admin_ssh_key | length > 0
+
+# -------------------------------------------------------------------
+# 4. Grant sudo privileges (NOPASSWD optional)
+# -------------------------------------------------------------------
+- name: Ensure admin user has passwordless sudo
+  copy:
+    dest: "/etc/sudoers.d/{{ system_admin_user | default('sysadmin') }}"
+    content: "{{ system_admin_user | default('sysadmin') }} ALL=(ALL) NOPASSWD:ALL"
+    mode: "0440"
+  when: system_admin_user is defined

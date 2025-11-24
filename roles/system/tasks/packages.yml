@@ -1,0 +1,17 @@
+---
+- name: Update APT cache
+  apt:
+    update_cache: yes
+
+- name: Install common system tools
+  apt:
+    name:
+      - curl
+      - wget
+      - vim
+      - git
+      - unzip
+      - tree
+      - htop
+      - ufw
+    state: present
