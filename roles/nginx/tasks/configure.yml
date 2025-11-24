@@ -1,9 +1,29 @@
 ---
 # Configure Nginx for:
-# - nginx-only (single mode, server == nginx)
-# - reverse proxy (proxy mode)
+# - nginx-only single mode   (mode == 'single' and server == 'nginx')
+# - reverse proxy mode       (mode == 'proxy')
 
-# Ensure document root exists (used in single mode)
+# Derive mode flags from play variables
+- name: Set Nginx mode facts
+  set_fact:
+    is_proxy_mode: "{{ mode == 'proxy' }}"
+    is_nginx_single: "{{ mode == 'single' and server == 'nginx' }}"
+
+# ---------------------------------------------------------
+# 1) STRICT RESET OF APACHE IN NGINX-ONLY MODE
+# ---------------------------------------------------------
+- name: Stop and disable Apache in Nginx-only mode
+  become: yes
+  service:
+    name: apache2
+    state: stopped
+    enabled: no
+  when: is_nginx_single
+  ignore_errors: yes
+
+# ---------------------------------------------------------
+#  Ensure Nginx document root exists (for single mode)
+# ---------------------------------------------------------
 - name: Ensure Nginx document root exists
   become: yes
   file:
@@ -12,60 +32,79 @@
     mode: "0755"
 
 # ---------------------------------------------------------
-#  STRICT RESET OF APACHE IN NGINX-ONLY MODE
+#  HARD RESET of Nginx default site configs
+#    (remove any stale/default configs before recreating)
 # ---------------------------------------------------------
-- name: Stop and disable Apache in Nginx-only mode
+- name: Remove old Nginx default site configs
   become: yes
-  service:
-    name: apache2
-    state: stopped
-    enabled: no
-  when: mode == 'single' and server == 'nginx'
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/default
+    - /etc/nginx/sites-enabled/default
   ignore_errors: yes
 
 # ---------------------------------------------------------
 #  PROXY MODE — Nginx → Apache backend
 # ---------------------------------------------------------
-- name: Configure Nginx reverse proxy (proxy mode)
+- name: Deploy Nginx reverse proxy config (proxy mode)
   become: yes
   template:
     src: reverse-proxy.conf.j2
     dest: /etc/nginx/sites-available/default
     mode: "0644"
-  when: mode == 'proxy'
+  when: is_proxy_mode
   notify: restart nginx
 
-# ---------------------------------------------------------
-#  NGINX-ONLY MODE — static site
-# ---------------------------------------------------------
-- name: Configure Nginx default site (nginx-only single mode)
-  become: yes
-  template:
-    src: single-site.conf.j2
-    dest: /etc/nginx/sites-available/default
-    mode: "0644"
-  when: mode == 'single' and server == 'nginx'
-  notify: restart nginx
-
-- name: Deploy Nginx index.html (nginx-only single mode)
-  become: yes
-  template:
-    src: index.html.j2
-    dest: "{{ nginx_root }}/index.html"
-    mode: "0644"
-  when: mode == 'single' and server == 'nginx'
-  notify: restart nginx
-
-# ---------------------------------------------------------
-#  Ensure sites-enabled/default points to our config
-# ---------------------------------------------------------
-- name: Ensure Nginx default site is enabled
+- name: Enable Nginx default site (proxy mode)
   become: yes
   file:
     src: /etc/nginx/sites-available/default
     path: /etc/nginx/sites-enabled/default
     state: link
+  when: is_proxy_mode
   notify: reload nginx
+
+# ---------------------------------------------------------
+#  NGINX-ONLY MODE — static site
+# ---------------------------------------------------------
+- name: Deploy Nginx single-site config (nginx-only mode)
+  become: yes
+  template:
+    src: single-site.conf.j2
+    dest: /etc/nginx/sites-available/default
+    mode: "0644"
+  when: is_nginx_single
+  notify: restart nginx
+
+- name: Enable Nginx default site (nginx-only mode)
+  become: yes
+  file:
+    src: /etc/nginx/sites-available/default
+    path: /etc/nginx/sites-enabled/default
+    state: link
+  when: is_nginx_single
+  notify: reload nginx
+
+- name: Deploy Nginx index.html (nginx-only mode)
+  become: yes
+  template:
+    src: index.html.j2
+    dest: "{{ nginx_root }}/index.html"
+    mode: "0644"
+  when: is_nginx_single
+  notify: reload nginx
+
+# ---------------------------------------------------------
+#  Validate Nginx configuration before starting
+# ---------------------------------------------------------
+- name: Test Nginx configuration
+  become: yes
+  command: nginx -t
+  register: nginx_test
+  changed_when: false
+  failed_when: nginx_test.rc != 0
 
 # ---------------------------------------------------------
 #  Ensure Nginx service running
@@ -74,5 +113,5 @@
   become: yes
   service:
     name: nginx
-    state: started
+    state: restarted
     enabled: yes

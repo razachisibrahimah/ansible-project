@@ -28,7 +28,7 @@
     mode: "0755"
 
 # ---------------------------------------------------------
-#  Manage ports.conf via template (no stale Listen 80)
+#  Manage ports.conf via template (uses apache_effective_port)
 # ---------------------------------------------------------
 - name: Deploy Apache ports.conf
   become: yes
@@ -49,13 +49,24 @@
     mode: "0644"
   notify: restart apache
 
-- name: Ensure Apache default site is enabled
+# ---------------------------------------------------------
+#  Site enable/disable logic per mode
+# ---------------------------------------------------------
+
+# Single Apache mode → enable default site (port 80)
+- name: Enable Apache default site in single-apache mode
   become: yes
-  file:
-    src: /etc/apache2/sites-available/000-default.conf
-    path: /etc/apache2/sites-enabled/000-default.conf
-    state: link
-  notify: reload apache
+  command: a2ensite 000-default
+  when: apache_backend_port is not defined
+  notify: restart apache
+
+# Proxy mode → keep default site disabled (backend only on 8080)
+- name: Disable Apache default site in proxy mode
+  become: yes
+  command: a2dissite 000-default
+  when: apache_backend_port is defined
+  ignore_errors: yes
+  notify: restart apache
 
 # ---------------------------------------------------------
 #  Ensure Apache running on the correct port
