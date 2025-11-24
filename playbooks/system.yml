@@ -1,0 +1,10 @@
+---
+- name: System Provisioning
+  hosts: "{{ target_env }}"
+  become: yes
+
+  vars:
+    # resolved environment passed from execute-playbook.sh, Makefile, or user env
+    target_env: "{{ lookup('env', 'ENVIRONMENT') | default('dev') }}"
+  roles:
+    - system

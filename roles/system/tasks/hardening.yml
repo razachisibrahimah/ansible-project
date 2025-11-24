@@ -1,14 +1,70 @@
 ---
+
+# Basic SSH security hardening
+# Runs ONLY when:
+#
+#   system_enable_hardening: true
+#
+# Controlled by:
+#   group_vars/all.yml or .env → ENABLE_HARDENING=true
+#
+# Includes safe-guards so you DO NOT lock yourself out.
+# -----------------------------------------------------------
+
+# 1) Ensure SSH config file exists before modifying it
+- name: Verify SSH configuration file exists
+  become: yes
+  stat:
+    path: /etc/ssh/sshd_config
+  register: sshd_config_check
+  tags: ['system', 'hardening']
+
+- name: Abort if sshd_config is missing
+  fail:
+    msg: "/etc/ssh/sshd_config not found — cannot apply hardening"
+  when: not sshd_config_check.stat.exists
+  tags: ['system', 'hardening']
+
+# -----------------------------------------------------------
+# 2) Disable SSH root login (recommended)
+# -----------------------------------------------------------
 - name: Disable root SSH login
+  become: yes
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^PermitRootLogin'
     line: 'PermitRootLogin no'
+    backup: yes
   notify: restart ssh
+  tags: ['system', 'hardening']
+
+# -----------------------------------------------------------
+# 3) Disable password authentication (Only if SSH key works!)
+# -----------------------------------------------------------
+# Prevents accidental lockout if the current session is using password auth
+# You can override using ENABLE_HARDENING=true
+# -----------------------------------------------------------
+
+- name: Check if current SSH session uses key auth
+  set_fact:
+    safe_to_disable_password_auth: "{{ (ansible_ssh_private_key_file is defined) }}"
+  tags: ['system', 'hardening']
+
+- name: Output warning if disabling password auth may lock you out
+  debug:
+    msg: >
+      WARNING: You are disabling PasswordAuthentication, but no private key
+      is detected. Make sure you can still log in!
+  when: not safe_to_disable_password_auth
+  tags: ['system', 'hardening']
 
 - name: Disable SSH password authentication
+  become: yes
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^PasswordAuthentication'
     line: 'PasswordAuthentication no'
+    backup: yes
   notify: restart ssh
+  when: safe_to_disable_password_auth  # Prevent lockout
+  tags: ['system', 'hardening']

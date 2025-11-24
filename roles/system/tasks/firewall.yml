@@ -1,20 +1,127 @@
 ---
-- name: Allow SSH
+# Advanced UFW firewall provisioning
+# Runs ONLY when:
+#   system_enable_firewall: true
+#
+# Supports:
+#   SSH protection
+#   Allow HTTP/HTTPS
+#   Custom allowed ports
+#   Allowlist (specific IPs)
+#   Denylist (block IPs)
+#   Default firewall policies
+#   Rate limiting
+# -----------------------------------------------------------
+
+# Ensure UFW installed
+- name: Ensure UFW is installed
+  become: yes
+  apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  tags: ['system', 'firewall']
+
+# -----------------------------------------------------------
+# Default policies (optional)
+# -----------------------------------------------------------
+- name: Set UFW default incoming policy
+  become: yes
+  ufw:
+    direction: incoming
+    policy: "{{ firewall_default_policy_incoming }}"
+  when: firewall_set_default_policies | bool
+  tags: ['system', 'firewall']
+
+- name: Set UFW default outgoing policy
+  become: yes
+  ufw:
+    direction: outgoing
+    policy: "{{ firewall_default_policy_outgoing }}"
+  when: firewall_set_default_policies | bool
+  tags: ['system', 'firewall']
+
+# -----------------------------------------------------------
+# Always allow SSH
+# -----------------------------------------------------------
+- name: Allow SSH (port 22)
+  become: yes
   ufw:
     rule: allow
     port: "22"
+  tags: ['system', 'firewall']
 
-- name: Allow HTTP
+# -----------------------------------------------------------
+# SSH rate limit (optional)
+# -----------------------------------------------------------
+- name: Apply SSH rate limit
+  become: yes
+  ufw:
+    rule: limit
+    port: "22"
+  when: firewall_rate_limit_ssh | bool
+  tags: ['system', 'firewall']
+
+# -----------------------------------------------------------
+# Allowed common ports
+# -----------------------------------------------------------
+- name: Allow HTTP (80)
+  become: yes
   ufw:
     rule: allow
     port: "80"
+  when: firewall_allow_http | bool
+  tags: ['system', 'firewall']
 
-- name: Allow HTTPS
+- name: Allow HTTPS (443)
+  become: yes
   ufw:
     rule: allow
     port: "443"
+  when: firewall_allow_https | bool
+  tags: ['system', 'firewall']
 
-- name: Enable UFW
+# -----------------------------------------------------------
+# Custom allowed ports (list)
+# -----------------------------------------------------------
+- name: Allow custom ports
+  become: yes
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  loop: "{{ firewall_allow_custom_ports }}"
+  when: firewall_allow_custom_ports | length > 0
+  tags: ['system', 'firewall']
+
+# -----------------------------------------------------------
+# Allowlist: Only allow from specific IPs
+# -----------------------------------------------------------
+- name: Allow specific IPs
+  become: yes
+  ufw:
+    rule: allow
+    src: "{{ item }}"
+  loop: "{{ firewall_allow_ips }}"
+  when: firewall_allow_ips | length > 0
+  tags: ['system', 'firewall']
+
+# -----------------------------------------------------------
+# Blocklist: Deny specific IPs
+# -----------------------------------------------------------
+- name: Deny specific IPs
+  become: yes
+  ufw:
+    rule: deny
+    src: "{{ item }}"
+  loop: "{{ firewall_block_ips }}"
+  when: firewall_block_ips | length > 0
+  tags: ['system', 'firewall']
+
+# -----------------------------------------------------------
+# Enable firewall (FIXED — NO invalid "enable:")
+# -----------------------------------------------------------
+- name: Enable and ensure UFW is active
+  become: yes
   ufw:
     state: enabled
-    enable: yes
+  tags: ['system', 'firewall']

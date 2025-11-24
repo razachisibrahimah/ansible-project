@@ -1,10 +1,20 @@
 ---
-- name: Create directories
+
+# Creates system-level directories such as:
+#   /opt/apps, /opt/logs, /opt/backups
+#
+# Runs ONLY when:
+#   system_enable_dirs: true
+#
+# Controlled from:
+#   group_vars/all.yml OR .env → ENABLE_DIRS=true
+# -----------------------------------------------------------
+
+- name: Create required system directories
+  become: yes
   file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
-  loop:
-    - /opt/apps
-    - /opt/logs
-    - /opt/backups
+  loop: "{{ system_directories }}"
+  tags: ['system', 'dirs']

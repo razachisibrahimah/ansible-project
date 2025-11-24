@@ -1,49 +1,53 @@
-# Web Server Provisioning (Apache / Nginx / Proxy)
+# Server Provisioning & Web Server Automation (Apache / Nginx / Proxy)
 
 ## Introduction
 
-This project provides a fully automated **Ansible-based web server provisioning framework** with support for:
+This repository provides a **complete, production-grade Ansible provisioning framework**, combining:
 
+### **PHASE 1 — System Provisioning**
+- Package installation  
+- User management  
+- SSH hardening  
+- Firewall automation  
+- Directory creation  
+- All controlled using **feature flags** via `.env`
+
+### **PHASE 2 — Web Server Provisioning**
 - Apache-only mode  
 - Nginx-only mode  
 - Reverse proxy mode (Nginx → Apache)  
-- Environment-based deployments (dev, staging, prod)  
-- Secure variable handling with **Ansible Vault**  
-- Dynamic inventory pulling values from a `.env` file  
-- A helper execution script and Makefile for developer-friendly workflows  
-
-This ensures a clean, consistent, and production-ready deployment experience.
+- Multi-environment deployment (dev/staging/prod)  
+- Secure secrets with **Ansible Vault**  
+- Automated runner script (`execute-playbook.sh`)  
+- Powerful Makefile for fast workflows  
 
 ---
 
-## Requirements
+# Requirements
 
-### Local Machine:
+## Local Machine
 - Python 3.x  
 - Ansible  
 - Ansible Vault  
 - Bash  
 - OpenSSH client  
 
-### Remote Machine:
-- Ubuntu/Debian Linux server  
-- SSH access enabled  
-- A user with `sudo` privileges  
-- Can authenticate using SSH key  
+## Remote Server
+- Ubuntu/Debian Linux  
+- SSH key-based access  
+- Sudo-enabled user  
 
 ---
 
-## Setup Instructions
+# Setup Instructions
 
-### 1. Create your `.env` file
-
-Copy the example:
+## 1. Create `.env`
 
 ```bash
 cp .env-example .env
 ```
 
-Update required values:
+Update values:
 
 ```
 HOST_IP=your_server_ip
@@ -54,81 +58,121 @@ PASSWORD=your_sudo_password
 ENVIRONMENT=dev
 SERVER=apache
 SERVER_MODE=single
-```
 
-### 2. Run the automated execution script
-
-```bash
-./execute-playbook.sh
-```
-
-This script:
-
-1. Loads `.env` variables  
-2. Validates required fields  
-3. Selects the correct inventory  
-4. Applies options like SERVER / SERVER_MODE  
-5. Prompts for your Vault password  
-6. Executes the playbook safely  
-
-Run a specific playbook:
-
-```bash
-./execute-playbook.sh playbooks/webserver.yml
-```
-
-Dry-run mode:
-
-```bash
-./execute-playbook.sh playbooks/webserver.yml --check
+# SYSTEM PROVISIONING FLAGS
+ENABLE_PACKAGES=true
+ENABLE_USERS=false
+ENABLE_HARDENING=false
+ENABLE_FIREWALL=false
+ENABLE_DIRS=false
 ```
 
 ---
 
-## 3. Using the Makefile
+# 2. Run playbooks automatically
 
-See all commands:
+## Default:
+```bash
+./execute-playbook.sh
+```
+
+## Run a specific playbook:
+```bash
+./execute-playbook.sh playbooks/webserver.yml
+```
+
+## Dry-run:
+```bash
+./execute-playbook.sh playbooks/system.yml --check
+```
+
+---
+
+# 3. Makefile Usage
+
+See all available commands:
 
 ```bash
 make help
 ```
 
-### Common commands:
+---
 
-| Command | Description |
-|--------|-------------|
-| `make env` | Create `.env` file from template |
-| `make check` | Validate `.env` |
-| `make run` | Run default playbook |
-| `make apache` | Deploy Apache only |
-| `make nginx` | Deploy Nginx only |
-| `make proxy` | Deploy Nginx → Apache reverse proxy |
-| `make dry` | Dry-run default playbook |
-| `make dry-web` | Dry-run webserver.yml |
-| `make vault-encrypt` | Encrypt `group_vars/all.yml` |
-| `make vault-decrypt` | Decrypt `group_vars/all.yml` |
-| `make vault-edit` | Edit encrypted variables |
-| `make clean` | Remove `.env` (with confirmation) |
+## System Provisioning Commands (NEW)
 
-This makes the project highly developer-friendly.
+These allow you to run **only the part of the system role you need**.
+
+### Run full system provisioning:
+```
+make system
+```
+
+### Install packages only:
+```
+make system-packages
+```
+
+### Create users only:
+```
+make system-users
+```
+
+### Apply SSH hardening only:
+```
+make system-hardening
+```
+
+### Configure firewall only:
+```
+make system-firewall
+```
+
+### Create system directories only:
+```
+make system-dirs
+```
 
 ---
 
-## Inventory Configuration (YAML-based)
+## System Dry-Run Commands (NEW)
 
-Inventory files are stored per environment:
+### Test full system provisioning:
+```
+make dry-system
+```
+
+### Dry-run for each component:
+```
+make dry-system-packages
+make dry-system-users
+make dry-system-firewall
+make dry-system-hardening
+make dry-system-dirs
+```
+
+---
+
+# Web Server Commands
+
+| Command | Description |
+|--------|-------------|
+| `make apache` | Deploy Apache-only |
+| `make nginx` | Deploy Nginx-only |
+| `make proxy` | Deploy Nginx → Apache reverse proxy |
+| `make dry-web` | Dry-run for webserver.yml |
+
+---
+
+# Inventory Structure
 
 ```
 inventory/
-├── dev/
-│   └── hosts.yml
-├── staging/
-│   └── hosts.yml
-└── prod/
-    └── hosts.yml
+├── dev/hosts.yml
+├── staging/hosts.yml
+└── prod/hosts.yml
 ```
 
-Example (`inventory/dev/hosts.yml`):
+Example:
 
 ```yaml
 dev:
@@ -138,97 +182,62 @@ dev:
       ansible_user: "{{ lookup('env', 'HOST_USER') }}"
       ansible_ssh_private_key_file: "{{ lookup('env', 'HOST_KEY') }}"
       ansible_become: yes
-      ansible_become_method: sudo
       ansible_become_password: "{{ lookup('env', 'PASSWORD') }}"
 ```
 
-This ensures secrets stay outside the repository.
-
 ---
 
-## Vault Usage
-
-Secret variables are stored in:
-
-```
-group_vars/all.yml
-```
+# Secrets with Ansible Vault
 
 Encrypt:
-
 ```bash
 make vault-encrypt
 ```
 
 Decrypt:
-
 ```bash
 make vault-decrypt
 ```
 
-Edit safely:
-
+Edit:
 ```bash
 make vault-edit
 ```
 
-All developers can run the repo with the same encrypted file.  
-Each provides the **vault password** manually (best practice).
+---
+
+# Troubleshooting
+
+## Nginx fails (port conflict)
+```bash
+sudo ss -tulpn | grep :80
+```
+
+## Missing variables
+```bash
+make check
+```
+
+## SSH issues
+```bash
+chmod 600 ~/.ssh/id_rsa
+```
 
 ---
 
-## Web Server Modes
-
-### 1. Apache-only Mode
-```
-SERVER=apache
-SERVER_MODE=single
-```
-- Apache runs on port **80**
-- Nginx fully disabled
-
-### 2. Nginx-only Mode
-```
-SERVER=nginx
-SERVER_MODE=single
-```
-- Nginx runs on port **80**
-- Apache fully disabled
-
-### 3. Reverse Proxy Mode (Nginx → Apache)
-```
-SERVER_MODE=proxy
-```
-- Apache backend on **8080**
-- Nginx frontend on **80**
-- Nginx proxies requests → Apache
-
-This is the recommended production setup.
-
----
-
-## Project Structure
+# Project Structure
 
 ```
 ansible-project/
 │
 ├── roles/
+│   ├── system/
 │   ├── apache/
-│   │   ├── defaults/
-│   │   ├── handlers/
-│   │   ├── tasks/
-│   │   ├── templates/
-│   │   └── vars/
-│   │
 │   └── nginx/
-│       ├── defaults/
-│       ├── handlers/
-│       ├── tasks/
-│       ├── templates/
-│       └── vars/
 │
 ├── playbooks/
 │   ├── site.yml
+│   ├── system.yml
 │   └── webserver.yml
 │
 ├── inventory/
@@ -237,10 +246,10 @@ ansible-project/
 │   └── prod/
 │
 ├── group_vars/
-│   └── all.yml  (encrypted)
+│   └── all.yml (encrypted)
 │
 ├── execute-playbook.sh
-├── makefile
+├── Makefile
 ├── .env
 ├── .env-example
 └── README.md
@@ -248,48 +257,13 @@ ansible-project/
 
 ---
 
-## Troubleshooting
+# Conclusion
 
-### Nginx fails to start
-Check who is using port 80:
+This repository delivers:
 
-```bash
-sudo ss -tulpn | grep :80
-```
-
-If `apache2` appears, Nginx cannot bind the port.
-
-### “Missing environment variables”
-Run:
-
-```bash
-make check
-```
-
-### SSH Permission Denied
-Verify:
-
-```bash
-chmod 600 ~/.ssh/id_rsa
-```
-
-### Vault issues
-Use:
-
-```bash
-make vault-edit
-```
-
----
-
-## Conclusion
-
-This project delivers:
-
-- A secure, automated provisioning framework  
+- Complete system provisioning  
+- Web server automation  
 - Multi-environment support  
-- Multi-server architecture (apache / nginx / proxy)  
-- Vault-based secret handling  
-- YAML-driven dynamic inventory  
-- A fully automated playbook runner script  
-- A Makefile for ease of use  
+- Secure secrets  
+- Scripted automation  
+- Modular, production-ready architecture

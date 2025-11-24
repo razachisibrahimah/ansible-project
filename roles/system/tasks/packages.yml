@@ -1,17 +1,24 @@
 ---
-- name: Update APT cache
+# Installs baseline system tools (curl, vim, git, etc.)
+# This file runs ONLY when:
+#
+#   system_enable_packages: true
+#
+# Controlled from:
+#   group_vars/all.yml  OR  .env via ENABLE_PACKAGES=true
+# ---------------------------------------------------------
+
+# Update apt cache once before installing packages
+- name: Update APT package index
+  become: yes
   apt:
     update_cache: yes
+  tags: ['system', 'packages']
 
+# Install essential system packages
 - name: Install common system tools
+  become: yes
   apt:
-    name:
-      - curl
-      - wget
-      - vim
-      - git
-      - unzip
-      - tree
-      - htop
-      - ufw
+    name: "{{ system_packages }}"
     state: present
+  tags: ['system', 'packages']

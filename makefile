@@ -53,6 +53,142 @@ prod: check ## Run against prod environment
 
 
 # -------------------------------------
+#  System Provisioning: Individual Components
+# -------------------------------------
+
+# =========================================================
+# SYSTEM ROLE — Feature Flag Controls
+# =========================================================
+
+system: check ## Run full system provisioning using flags in .env
+	@$(RUN_SCRIPT) playbooks/system.yml
+
+# =========================================================
+# SYSTEM ROLE — Dry-Run Versions (Check Mode)
+# =========================================================
+
+# -------------------------------
+# Dry-run: FULL system provisioning
+# -------------------------------
+dry-system: check ## Dry-run full system provisioning
+	@DRY_RUN=--check $(RUN_SCRIPT) playbooks/system.yml
+
+# -------------------------------
+# Dry-run: packages only
+# -------------------------------
+dry-system-packages: check ## Dry-run: install packages only
+	@ENABLE_PACKAGES=true \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml --check
+
+# -------------------------------
+# Dry-run: users only
+# -------------------------------
+dry-system-users: check ## Dry-run: manage users only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=true \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml --check
+
+# -------------------------------
+# Dry-run: firewall only
+# -------------------------------
+dry-system-firewall: check ## Dry-run: configure firewall only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=true \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml --check
+
+# -------------------------------
+# Dry-run: hardening only
+# -------------------------------
+dry-system-hardening: check ## Dry-run: apply system hardening only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=true \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml --check
+
+# -------------------------------
+# Dry-run: directories only
+# -------------------------------
+dry-system-dirs: check ## Dry-run: create directories only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=true \
+	 $(RUN_SCRIPT) playbooks/system.yml --check
+
+
+# -------------------------------
+# Run ONLY package installation
+# -------------------------------
+system-packages: check ## Run package installation only
+	@ENABLE_PACKAGES=true \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml
+
+# -------------------------------
+# Run ONLY user creation
+# -------------------------------
+system-users: check ## Run user management only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=true \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml
+
+# -------------------------------
+# Run ONLY firewall setup
+# -------------------------------
+system-firewall: check ## Run firewall configuration only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=true \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml
+
+# -------------------------------
+# Run ONLY SSH hardening
+# -------------------------------
+system-hardening: check ## Run SSH hardening only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=true \
+	 ENABLE_DIRS=false \
+	 $(RUN_SCRIPT) playbooks/system.yml
+
+# -------------------------------
+# Run ONLY directory creation
+# -------------------------------
+system-dirs: check ## Create system directories only
+	@ENABLE_PACKAGES=false \
+	 ENABLE_USERS=false \
+	 ENABLE_FIREWALL=false \
+	 ENABLE_HARDENING=false \
+	 ENABLE_DIRS=true \
+	 $(RUN_SCRIPT) playbooks/system.yml
+
+
+system-all: check ## Run ALL system tasks
+	@$(RUN_SCRIPT) playbooks/system.yml
+
+# -------------------------------------
 #  Web Server Modes (Apache / Nginx / Proxy)
 # -------------------------------------
 apache: check ## Run webserver.yml using Apache

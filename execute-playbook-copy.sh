@@ -2,21 +2,20 @@
 #
 # execute-playbook.sh
 # --------------------------------------------------
-# Features:
+# This script automatically:
 #   Loads environment variables from .env
 #   Validates required environment variables
-#   Supports multi-environment deployments (dev/staging/prod)
-#   Supports multi-playbooks (.yml)
+#   Supports multi-environment inventories (dev/staging/prod)
+#   Supports multi-playbook structure (site.yml, webserver.yml)
 #   Supports SERVER_MODE=single|proxy and SERVER=apache|nginx
-#   Supports dry-run mode (--check)
-#   Passes target_env to playbooks
-#   Uses Ansible Vault securely
-#   Checks if Ansible is installed (NEW)
+#   Supports dry-run mode via: ./execute-playbook.sh --check
+#   Uses Ansible Vault for decryption
+#   CHECKS if Ansible is installed (NEW)
 # --------------------------------------------------
 
 ENV_FILE=".env"
 
-# Color output
+# Colors for cleaner output
 RED="$(tput setaf 1)"
 GREEN="$(tput setaf 2)"
 YELLOW="$(tput setaf 3)"
@@ -24,20 +23,27 @@ BLUE="$(tput setaf 4)"
 RESET="$(tput sgr0)"
 
 # --------------------------------------------------
-# Check if Ansible is installed
+#  Check if Ansible is installed
 # --------------------------------------------------
 if ! command -v ansible-playbook >/dev/null 2>&1; then
   echo "${RED}ERROR:${RESET} Ansible is not installed."
   echo
-  echo "Install using one of the following:"
-  echo "${GREEN}- macOS:${RESET} brew install ansible"
-  echo "${GREEN}- Ubuntu:${RESET} sudo apt update && sudo apt install -y ansible"
-  echo "${GREEN}- Windows (WSL2):${RESET} sudo apt update && sudo apt install -y ansible"
+  echo "Install Ansible using one of the commands below:"
+  echo
+  echo "${GREEN}macOS (Homebrew):${RESET}"
+  echo "  brew install ansible"
+  echo
+  echo "${GREEN}Ubuntu/Debian:${RESET}"
+  echo "  sudo apt update && sudo apt install -y ansible"
+  echo
+  echo "${GREEN}Windows (WSL2):${RESET}"
+  echo "  sudo apt update && sudo apt install -y ansible"
+  echo
   exit 1
 fi
 
 # --------------------------------------------------
-# Input arguments
+# INPUT ARGUMENTS
 # --------------------------------------------------
 PLAYBOOK="playbooks/site.yml"
 DRY_RUN=""
@@ -50,7 +56,7 @@ for arg in "$@"; do
 done
 
 # --------------------------------------------------
-# Environment selection
+# ENVIRONMENT SELECTION
 # --------------------------------------------------
 ENVIRONMENT="${ENVIRONMENT:-dev}"
 INVENTORY="inventory/${ENVIRONMENT}/hosts.yml"
@@ -64,8 +70,7 @@ echo "---------------------------------------------------"
 # --------------------------------------------------
 if [ ! -f "$ENV_FILE" ]; then
   echo "${RED}ERROR:${RESET} .env file not found."
-  echo "Create one with:"
-  echo "  cp .env-example .env"
+  echo "Create one using: cp .env-example .env"
   exit 1
 fi
 
@@ -105,20 +110,23 @@ echo "${GREEN}Playbook:${RESET}   $PLAYBOOK"
 echo
 
 # --------------------------------------------------
-# Verify files exist
+# Validate inventory file exists
 # --------------------------------------------------
 if [ ! -f "$INVENTORY" ]; then
   echo "${RED}ERROR:${RESET} Inventory file not found: $INVENTORY"
   exit 1
 fi
 
+# --------------------------------------------------
+# Validate playbook file exists
+# --------------------------------------------------
 if [ ! -f "$PLAYBOOK" ]; then
   echo "${RED}ERROR:${RESET} Playbook not found: $PLAYBOOK"
   exit 1
 fi
 
 # --------------------------------------------------
-# Run Ansible
+# RUN ANSIBLE
 # --------------------------------------------------
 echo "${BLUE}Running Ansible playbook...${RESET}"
 

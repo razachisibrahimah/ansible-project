@@ -1,0 +1,85 @@
+---
+# -----------------------------------------------------------
+# SYSTEM ROLE FEATURE FLAGS (defaults)
+# -----------------------------------------------------------
+
+# Enable/disable sections of the system provisioning
+system_enable_packages: true        # installs system packages
+system_enable_users: false          # manage user accounts
+system_enable_firewall: true        # configure UFW firewall
+system_enable_hardening: false      # apply SSH hardening rules
+system_enable_dirs: true            # create directories
+
+
+# -----------------------------------------------------------
+# PACKAGES — installed when system_enable_packages=true
+# -----------------------------------------------------------
+
+system_packages:
+  - curl
+  - wget
+  - vim
+  - git
+  - unzip
+  - tree
+  - htop
+  - ufw
+
+
+# -----------------------------------------------------------
+# FIREWALL DEFAULTS (load from .env if provided)
+# -----------------------------------------------------------
+
+# Basic toggles
+firewall_allow_http: "{{ lookup('env', 'ALLOW_HTTP')  | default('true')  | bool }}"
+firewall_allow_https: "{{ lookup('env', 'ALLOW_HTTPS') | default('true') | bool }}"
+
+# Custom allowed ports (comma-separated string → list)
+firewall_allow_custom_ports: >-
+  {{
+    lookup('env', 'ALLOW_PORTS')
+    | default('')
+    | split(',')
+    | reject('equalto', '')
+    | list
+  }}
+
+# Allowlist / blocklist IP ranges
+firewall_allow_ips: >-
+  {{
+    lookup('env', 'ALLOW_IPS')
+    | default('')
+    | split(',')
+    | reject('equalto', '')
+    | list
+  }}
+
+firewall_block_ips: >-
+  {{
+    lookup('env', 'BLOCK_IPS')
+    | default('')
+    | split(',')
+    | reject('equalto', '')
+    | list
+  }}
+
+# SSH brute-force rate limiting
+firewall_rate_limit_ssh: "{{ lookup('env', 'RATE_LIMIT_SSH') | default('true') | bool }}"
+
+# Default UFW policy controls
+firewall_set_default_policies: "{{ lookup('env', 'SET_DEFAULT_POLICIES') | default('false') | bool }}"
+firewall_default_policy_incoming: "{{ lookup('env', 'DEFAULT_POLICY_IN') | default('deny') }}"
+firewall_default_policy_outgoing: "{{ lookup('env', 'DEFAULT_POLICY_OUT') | default('allow') }}"
+
+
+# -----------------------------------------------------------
+# DIRECTORIES (ENV override supported)
+# -----------------------------------------------------------
+
+system_directories: >-
+  {{
+    lookup('env', 'SYSTEM_DIRS')
+    | default('/opt/apps,/opt/logs,/opt/backups')
+    | split(',')
+    | list
+  }}
