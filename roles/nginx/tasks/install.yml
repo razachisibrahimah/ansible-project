@@ -1,0 +1,17 @@
+---
+# Install Nginx web server and dependencies
+
+# Refresh apt cache when needed (not every run)
+- name: Update apt package cache
+  become: yes
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600     # only refresh if older than 1 hour
+
+# Install Nginx packages from defaults/main.yml
+- name: Install Nginx server packages
+  become: yes
+  apt:
+    name: "{{ nginx_packages }}"
+    state: present
+  notify: restart nginx

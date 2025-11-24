@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ index_title | default("Apache Web Server") }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f7f7f7;
+            color: #333;
+        }
+        h1 {
+            color: #c0392b;
+        }
+        .box {
+            padding: 20px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 650px;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>{{ index_title | default("Apache Server (Backend Mode)") }}</h1>
+
+        <p>
+            {{ index_description | default(
+                "This page is being served by Apache. If you see this page through Nginx, you are in reverse proxy mode."
+            ) }}
+        </p>
+
+        {% if apache_backend_port is defined %}
+            <p><strong>Backend Port:</strong> {{ apache_backend_port }}</p>
+            <p><em>This indicates Apache is running in backend mode behind a Nginx reverse proxy.</em></p>
+        {% else %}
+            <p><em>Apache is running in single mode on port 80.</em></p>
+        {% endif %}
+    </div>
+</body>
+</html>

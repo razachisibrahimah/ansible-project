@@ -1,0 +1,19 @@
+---
+# ---------------------------------------
+# Nginx Role Defaults
+# ---------------------------------------
+
+# Packages required for Nginx web server
+nginx_packages:
+  - nginx
+
+# Document root for Nginx (used only in single mode)
+nginx_root: "/var/www/html"
+
+# Default backend port for reverse proxy mode
+# Can be overridden with nginx_proxy_backend_port from playbook
+nginx_default_backend_port: 8080
+
+# Metadata for index.html (single mode)
+nginx_index_title: "Nginx Web Server"
+nginx_index_description: "This page is served directly by Nginx in single mode."

@@ -1,0 +1,15 @@
+---
+# Main task file for Nginx role
+# Supports:
+#   - Single mode (no proxy)
+#   - Reverse proxy mode (nginx → apache backend)
+
+# Install Nginx and dependencies
+- name: Load install tasks
+  include_tasks: install.yml
+
+# Configure Nginx depending on operation mode:
+#   - Single: serve static index
+#   - Proxy: reverse proxy to Apache backend port
+- name: Load configuration tasks
+  include_tasks: configure.yml

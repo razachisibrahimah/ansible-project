@@ -1,0 +1,13 @@
+---
+# Main task file for Apache role
+# Supports:
+#   - Single mode (Apache only)
+#   - Proxy mode (Apache backend on custom port, e.g. 8080)
+
+# Install Apache and dependencies
+- name: Load install tasks
+  include_tasks: install.yml
+
+# Configure Apache (single mode or backend mode)
+- name: Load configuration tasks
+  include_tasks: configure.yml

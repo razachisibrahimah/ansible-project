@@ -1,0 +1,17 @@
+---
+# Install Apache HTTP server and required dependencies
+
+# Ensure apt cache is updated
+- name: Update apt package cache
+  become: yes
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600    # Only refresh if older than 1 hour
+
+# Install Apache packages (from defaults/main.yml)
+- name: Install Apache server packages
+  become: yes
+  apt:
+    name: "{{ apache_packages }}"
+    state: present
+  notify: restart apache

@@ -1,0 +1,15 @@
+---
+# Handlers for Nginx role
+# These handlers are triggered when templates or configs change.
+
+- name: restart nginx
+  become: yes
+  service:
+    name: nginx
+    state: restarted
+
+- name: reload nginx
+  become: yes
+  service:
+    name: nginx
+    state: reloaded

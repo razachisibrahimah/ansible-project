@@ -1,0 +1,15 @@
+---
+# Handlers for Apache role
+# These handlers run when notified by configuration or template changes.
+
+- name: restart apache
+  become: yes
+  service:
+    name: apache2
+    state: restarted
+
+- name: reload apache
+  become: yes
+  service:
+    name: apache2
+    state: reloaded

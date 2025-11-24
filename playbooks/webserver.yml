@@ -1,0 +1,73 @@
+---
+# Web Server Setup (Apache-only, Nginx-only, Proxy: Nginx → Apache)
+
+- name: Web Server Setup
+  hosts: "{{ target_env }}"
+  become: yes
+
+  vars:
+    # Safe variable containing dev/staging/prod
+    target_env: "{{ target_env | default( lookup('env', 'ENVIRONMENT') | default('dev') ) }}"
+
+    server: "{{ lookup('env', 'SERVER') | default('apache') | lower }}"
+    mode: "{{ lookup('env', 'SERVER_MODE') | default('single') | lower }}"
+
+
+  pre_tasks:
+
+    # -------------------------
+    # Validate allowed modes
+    # -------------------------
+    - name: Validate SERVER_MODE value
+      fail:
+        msg: "Invalid SERVER_MODE '{{ mode }}'. Allowed: single, proxy"
+      when: mode not in ['single', 'proxy']
+
+    # ----------------------------------------------------------
+    # Validate server choice *only* when running in single mode
+    # ----------------------------------------------------------
+    - name: Validate SERVER choice for single mode
+      fail:
+        msg: "Invalid SERVER '{{ server }}'. Use 'apache' or 'nginx' for single mode."
+      when: mode == 'single' and server not in ['apache', 'nginx']
+
+    - name: Show selected configuration
+      debug:
+        msg:
+          - "SERVER_MODE: {{ mode }}"
+          - "SERVER (only used in single mode): {{ server }}"
+
+  tasks:
+
+    # ==========================================================
+    #   MODE 1: APACHE-ONLY (single mode)
+    # ==========================================================
+    - name: Install Apache (single mode)
+      include_role:
+        name: apache
+      when: mode == 'single' and server == 'apache'
+
+    # ==========================================================
+    #   MODE 2: NGINX-ONLY (single mode)
+    # ==========================================================
+    - name: Install Nginx (single mode)
+      include_role:
+        name: nginx
+      when: mode == 'single' and server == 'nginx'
+
+    # ==========================================================
+    #   MODE 3: REVERSE PROXY MODE (Nginx → Apache)
+    # ==========================================================
+    - name: Install Apache backend (proxy mode)
+      include_role:
+        name: apache
+      vars:
+        apache_backend_port: 8080      # backend port for proxy mode
+      when: mode == 'proxy'
+
+    - name: Install Nginx reverse proxy (proxy mode)
+      include_role:
+        name: nginx
+      vars:
+        nginx_proxy_backend_port: 8080 # same backend port used by Apache
+      when: mode == 'proxy'

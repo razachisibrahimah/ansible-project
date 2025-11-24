@@ -1,0 +1,22 @@
+---
+# ---------------------------------------
+# Apache Role Defaults
+# ---------------------------------------
+
+# Packages required for Apache web server
+apache_packages:
+  - apache2
+
+# Directory where Apache serves web content
+web_dir: "/var/www/html"
+
+# Default Apache listen port in single mode
+apache_port: 80
+
+# Default backend port (used in reverse proxy mode)
+# Overridden by playbook variable: apache_backend_port
+apache_backend_default_port: 8080
+
+# Page metadata 
+index_title: "Apache Web Server"
+index_description: "This page is served by Apache."
