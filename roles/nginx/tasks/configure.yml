@@ -10,7 +10,7 @@
     is_nginx_single: "{{ mode == 'single' and server == 'nginx' }}"
 
 # ---------------------------------------------------------
-# 1) STRICT RESET OF APACHE IN NGINX-ONLY MODE
+#  STRICT RESET OF APACHE IN NGINX-ONLY MODE
 # ---------------------------------------------------------
 - name: Stop and disable Apache in Nginx-only mode
   become: yes

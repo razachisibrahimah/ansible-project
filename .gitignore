@@ -1,1 +1,69 @@
+# -------------------------------
+# OS & Editor Junk
+# -------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+
+# -------------------------------
+# Python / Ansible Caches
+# -------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.cache/
+ansible.log
+
+# -------------------------------
+# Environment / Secrets
+# -------------------------------
 .env
+.env.*
+!*.env-example
+*.vault-pass
+vault-password.txt
+
+# SSH keys
+*.pem
+*.key
+*.pub
+
+# -------------------------------
+# Logs & Temp Files
+# -------------------------------
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# -------------------------------
+# Ansible Artifacts
+# -------------------------------
+.retry
+.fact_cache/
+inventory/*/hosts.backup.yml
+
+# -------------------------------
+# Node / Docker (if added later)
+# -------------------------------
+node_modules/
+dist/
+build/
+*.tar
+*.tar.gz
+
+# -------------------------------
+# Systemd Units (if generated)
+# -------------------------------
+*.service

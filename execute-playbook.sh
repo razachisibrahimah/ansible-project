@@ -3,14 +3,14 @@
 # execute-playbook.sh
 # --------------------------------------------------
 # This script automatically:
-#  1. Loads environment variables from .env
-#  2. Validates required environment variables
-#  3. Supports multi-environment inventories (dev/staging/prod)
-#  4. Supports multi-playbook structure (site.yml, webserver.yml)
-#  5. Supports SERVER_MODE=single|proxy and SERVER=apache|nginx
-#  6. Supports dry-run mode via: ./execute-playbook.sh --check
-#  7. Uses Ansible Vault for decryption
-#  8. CHECKS if Ansible is installed (NEW)
+#   Loads environment variables from .env
+#   Validates required environment variables
+#   Supports multi-environment inventories (dev/staging/prod)
+#   Supports multi-playbook structure (site.yml, webserver.yml)
+#   Supports SERVER_MODE=single|proxy and SERVER=apache|nginx
+#   Supports dry-run mode via: ./execute-playbook.sh --check
+#   Uses Ansible Vault for decryption
+#   CHECKS if Ansible is installed (NEW)
 # --------------------------------------------------
 
 ENV_FILE=".env"
@@ -23,7 +23,7 @@ BLUE="$(tput setaf 4)"
 RESET="$(tput sgr0)"
 
 # --------------------------------------------------
-# 0. Check if Ansible is installed (NEW)
+#  Check if Ansible is installed
 # --------------------------------------------------
 if ! command -v ansible-playbook >/dev/null 2>&1; then
   echo "${RED}ERROR:${RESET} Ansible is not installed."
