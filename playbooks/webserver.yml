@@ -62,12 +62,13 @@
       include_role:
         name: apache
       vars:
-        apache_backend_port: 8080      # backend port for proxy mode
+       apache_backend_port: "{{ lookup('env', 'APACHE_BACKEND_PORT') | int }}"
       when: mode == 'proxy'
 
     - name: Install Nginx reverse proxy (proxy mode)
       include_role:
         name: nginx
       vars:
-        nginx_proxy_backend_port: 8080 # same backend port used by Apache
+        nginx_proxy_backend_port: "{{ lookup('env', 'NGINX_BACKEND_PORT') | int }}"
+
       when: mode == 'proxy'

@@ -1,23 +1,44 @@
+# Upstream backend (Apache running on backend port)
 upstream backend_server {
     server 127.0.0.1:{{ nginx_proxy_backend_port }};
 }
 
 server {
-    listen 80;
+    listen 80 default_server;
     server_name _;
 
+    # ------------------------------------
+    # Main reverse proxy configuration
+    # ------------------------------------
     location / {
         proxy_pass http://backend_server;
 
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Essential proxy headers
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Required for long-running requests / websockets
         proxy_http_version 1.1;
         proxy_set_header Connection "";
+
+        # Timeout protection
+        proxy_connect_timeout   60s;
+        proxy_send_timeout      60s;
+        proxy_read_timeout      60s;
+
+        # Buffer tuning (prevents 502 on large headers)
+        proxy_buffering         on;
+        proxy_buffers           16 16k;
+        proxy_buffer_size       32k;
     }
 
+    # ------------------------------------
+    # Simple health check endpoint
+    # ------------------------------------
     location /health {
-        return 200 "OK\n";
         add_header Content-Type text/plain;
+        return 200 "OK\n";
     }
 }

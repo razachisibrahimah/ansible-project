@@ -13,51 +13,50 @@ nginx_packages:
 # DOCUMENT ROOTS
 # ---------------------------------------------------------
 
+# Default web root for single mode
 nginx_root: "/var/www/html"
 
-# Required by configure.yml
+# Must ALWAYS exist (used in configure.yml)
 nginx_web_root: "{{ nginx_root }}"
 
 # ---------------------------------------------------------
-# NETWORK / PORT CONFIGURATION
+# NETWORK / PORT CONFIGURATION (ENV Driven)
 # ---------------------------------------------------------
 
-nginx_listen_port: "{{ lookup('env', 'NGINX_PORT') | int }}"
+# NGINX_PORT must be defined by user
+nginx_listen_port: "{{ lookup('env', 'NGINX_PORT') | default('', true) | int }}"
 
-nginx_default_backend_port: "{{ lookup('env', 'NGINX_BACKEND_PORT') | int }}"
+# NGINX_BACKEND_PORT must be defined by user
+nginx_default_backend_port: "{{ lookup('env', 'NGINX_BACKEND_PORT') | default('', true) | int }}"
 
-# Required by reverse-proxy.conf.j2 template
+# Used inside proxy template
 nginx_proxy_backend_port: "{{ nginx_default_backend_port }}"
+
+# Port used in SINGLE MODE
+nginx_single_port: "{{ nginx_listen_port }}"
 
 # ---------------------------------------------------------
 # METADATA FOR index.html (single mode)
 # ---------------------------------------------------------
-
 nginx_index_title: "Nginx Web Server"
 nginx_index_description: "This page is served directly by Nginx in single mode."
 
 # ---------------------------------------------------------
 # FILE LOCATIONS
 # ---------------------------------------------------------
-
 nginx_default_site: "/etc/nginx/sites-available/default"
 nginx_default_site_link: "/etc/nginx/sites-enabled/default"
 nginx_service_name: "nginx"
 
 # ---------------------------------------------------------
-# TEMPLATE FILENAMES (Required)
+# TEMPLATE FILENAMES (REQUIRED)
 # ---------------------------------------------------------
 
-# Used in `Deploy Nginx default config (single mode)`
+# Template for single mode Nginx config
 nginx_default_conf: "default.conf"
 
-# Used in `Deploy Nginx reverse proxy config (proxy mode)`
+# Template for proxy mode Nginx config
+# Used in configure.yml:
+#   src: "{{ nginx_proxy_conf }}.j2"
+#   dest: /etc/nginx/sites-available/{{ nginx_proxy_conf }}
 nginx_proxy_conf: "reverse-proxy.conf"
-
-# ---------------------------------------------------------
-# MODE PORTS
-# ---------------------------------------------------------
-
-# Port Nginx listens on in SINGLE mode
-nginx_single_port: "{{ nginx_listen_port }}"
-

@@ -1,8 +1,61 @@
 ---
+# ============================================================================
+#  NGINX CONFIGURATION TASKS
+# ============================================================================
+
+
 # ---------------------------------------------------------
-# NGINX PACKAGE
+#  CLEANUP: REMOVE OLD PROXY CONFIGS WHEN NOT IN PROXY MODE
 # ---------------------------------------------------------
 
+- name: Remove stale proxy config (sites-enabled)
+  file:
+    path: "/etc/nginx/sites-enabled/{{ nginx_proxy_conf }}"
+    state: absent
+  when: mode != "proxy"
+  notify: reload nginx
+
+- name: Remove stale proxy config (sites-available)
+  file:
+    path: "/etc/nginx/sites-available/{{ nginx_proxy_conf }}"
+    state: absent
+  when: mode != "proxy"
+  notify: reload nginx
+
+# ---------------------------------------------------------
+#  SAFETY CHECK (proxy mode): Ensure Apache NOT on port 80
+# ---------------------------------------------------------
+- name: Check if Apache is listening on port 80 (proxy mode only)
+  become: yes
+  shell: ss -tulpn | grep ':80 ' | grep apache2 || true
+  register: apache_on_80
+  changed_when: false
+  when: mode == "proxy"
+
+- name: Stop Apache if it is incorrectly using port 80
+  become: yes
+  service:
+    name: apache2
+    state: stopped
+    enabled: no
+  when:
+    - mode == "proxy"
+    - apache_on_80.stdout != ""
+
+- name: Fail if Apache is STILL listening on port 80 (conflict)
+  fail:
+    msg: >
+      Apache is still listening on port 80, but proxy mode requires:
+        - Apache on backend port (e.g., 8080)
+        - Nginx owning port 80
+      Apache did not stop. Retry again and if it still persist, fix Apache config manually.
+  when:
+    - mode == "proxy"
+    - apache_on_80.stdout != ""
+
+# ---------------------------------------------------------
+#  NGINX PACKAGE
+# ---------------------------------------------------------
 - name: Ensure Nginx is installed
   apt:
     name: nginx
@@ -10,7 +63,7 @@
     update_cache: yes
 
 # ---------------------------------------------------------
-# STOP APACHE WHEN USING SINGLE NGINX MODE
+#  STOP APACHE IN SINGLE NGINX MODE
 # ---------------------------------------------------------
 - name: Stop Apache when in Nginx-only mode
   service:
@@ -21,7 +74,7 @@
   ignore_errors: yes
 
 # ---------------------------------------------------------
-# DOCUMENT ROOT
+#  DOCUMENT ROOT
 # ---------------------------------------------------------
 - name: Ensure Nginx document root exists
   file:
@@ -30,63 +83,63 @@
     mode: "0755"
 
 # ---------------------------------------------------------
-# PROXY MODE TEMPLATE
+#  PROXY MODE TEMPLATE
 # ---------------------------------------------------------
 - name: Deploy Nginx reverse proxy config (proxy mode)
   template:
-    src: "{{ nginx_reverse_proxy_conf }}.j2"
-    dest: /etc/nginx/sites-available/{{ nginx_reverse_proxy_conf }}
+    src: "{{ nginx_proxy_conf }}.j2"
+    dest: "/etc/nginx/sites-available/{{ nginx_proxy_conf }}"
     mode: "0644"
   when: mode == "proxy"
   notify: reload nginx
 
-- name: Enable reverse proxy config
+- name: Enable reverse proxy site
   file:
-    src: /etc/nginx/sites-available/{{ nginx_reverse_proxy_conf }}
-    path: /etc/nginx/sites-enabled/{{ nginx_reverse_proxy_conf }}
+    src: "/etc/nginx/sites-available/{{ nginx_proxy_conf }}"
+    path: "/etc/nginx/sites-enabled/{{ nginx_proxy_conf }}"
     state: link
   when: mode == "proxy"
   notify: reload nginx
 
-- name: Disable default site in proxy mode
+- name: Disable default Nginx site in proxy mode
   file:
-    path: /etc/nginx/sites-enabled/default
+    path: "/etc/nginx/sites-enabled/default"
     state: absent
   when: mode == "proxy"
   notify: reload nginx
 
 # ---------------------------------------------------------
-# SINGLE MODE TEMPLATE
+#  SINGLE MODE TEMPLATE
 # ---------------------------------------------------------
 - name: Deploy Nginx default config (single mode)
   template:
     src: "{{ nginx_default_conf }}.j2"
-    dest: /etc/nginx/sites-available/default
+    dest: "/etc/nginx/sites-available/default"
     mode: "0644"
   when: mode == "single" and server == "nginx"
   notify: reload nginx
 
 - name: Ensure default site enabled (single mode)
   file:
-    src: /etc/nginx/sites-available/default
-    path: /etc/nginx/sites-enabled/default
+    src: "/etc/nginx/sites-available/default"
+    path: "/etc/nginx/sites-enabled/default"
     state: link
   when: mode == "single" and server == "nginx"
   notify: reload nginx
 
 # ---------------------------------------------------------
-# INDEX PAGE
+#  INDEX PAGE
 # ---------------------------------------------------------
 - name: Deploy index.html only in single Nginx mode
   template:
-    src: index.html.j2
+    src: "index.html.j2"
     dest: "{{ nginx_web_root }}/index.html"
     mode: "0644"
   when: mode == "single" and server == "nginx"
   notify: reload nginx
 
 # ---------------------------------------------------------
-# SERVICE
+#  SERVICE
 # ---------------------------------------------------------
 - name: Ensure Nginx is running and enabled
   service:

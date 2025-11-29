@@ -1,12 +1,22 @@
 ---
 # Configure Apache for single and proxy backend mode with idempotency
 
+# Decide which port Apache should listen on:
+#  Single mode: apache_port        (APACHE_PORT from .env)
+#  Proxy mode: apache_backend_port (APACHE_BACKEND_PORT or overridden in playbook)
 - name: Set effective Apache port
   set_fact:
     apache_effective_port: "{{ apache_backend_port | default(apache_port) }}"
 
+- name: Debug Apache mode and port
+  debug:
+    msg:
+      - "Apache mode: {{ mode | default('UNKNOWN') }}"
+      - "Apache server var: {{ server | default('UNKNOWN') }}"
+      - "Apache effective port: {{ apache_effective_port }}"
+
 # ---------------------------------------------------------
-# STOP NGINX ONLY IN SINGLE APACHE MODE (idempotent)
+# STOP NGINX ONLY IN SINGLE APACHE MODE
 # ---------------------------------------------------------
 - name: Disable Nginx in Apache-only mode (safe)
   become: yes
@@ -28,7 +38,7 @@
     mode: "0755"
 
 # ---------------------------------------------------------
-# Deploy ports.conf (idempotent template)
+# Deploy ports.conf: Apache listens ONLY on apache_effective_port
 # ---------------------------------------------------------
 - name: Deploy ports.conf
   become: yes
@@ -39,7 +49,10 @@
   notify: reload apache
 
 # ---------------------------------------------------------
-# Deploy vhost config (idempotent template)
+# Deploy vhost config (000-default.conf)
+# Uses apache_effective_port for BOTH single and proxy
+#   Single: *:80
+#   Proxy:  *:8080
 # ---------------------------------------------------------
 - name: Deploy 000-default.conf
   become: yes
@@ -50,7 +63,8 @@
   notify: reload apache
 
 # ---------------------------------------------------------
-# Ensure vhost symlink exists
+# Ensure default vhost is enabled in ALL modes
+# (it already uses apache_effective_port from the template)
 # ---------------------------------------------------------
 - name: Ensure Apache default site is enabled
   become: yes
@@ -60,7 +74,7 @@
     state: link
 
 # ---------------------------------------------------------
-# Ensure Apache running
+# Ensure Apache service is running on the correct port
 # ---------------------------------------------------------
 - name: Ensure Apache service is running and enabled
   become: yes
@@ -70,7 +84,9 @@
     enabled: yes
 
 # ---------------------------------------------------------
-# Deploy index.html (idempotent)
+# Deploy index.html
+#    In single mode: user-facing test page
+#    In proxy mode: backend page (should NOT conflict with Nginx)
 # ---------------------------------------------------------
 - name: Deploy Apache index.html
   become: yes
