@@ -2,7 +2,7 @@
 # Manage system users, SSH keys, and sudo privileges
 
 # -------------------------------------------------------------------
-# 1. Ensure admin user exists
+#  Ensure admin user exists
 # This creates a machine user separate from HOST_USER if needed.
 # -------------------------------------------------------------------
 - name: Ensure admin user exists
@@ -12,7 +12,7 @@
     create_home: yes
 
 # -------------------------------------------------------------------
-# 2. Ensure ~/.ssh directory exists for admin user
+#  Ensure ~/.ssh directory exists for admin user
 # -------------------------------------------------------------------
 - name: Ensure SSH directory exists for admin user
   file:
@@ -23,7 +23,7 @@
     group: "{{ system_admin_user | default('sysadmin') }}"
 
 # -------------------------------------------------------------------
-# 3. Add authorized SSH key (optional)
+#  Add authorized SSH key (optional)
 # You can store SSH public key in group_vars or Vault.
 # -------------------------------------------------------------------
 - name: Add admin user's authorized SSH key
@@ -36,7 +36,7 @@
   when: system_admin_ssh_key is defined and system_admin_ssh_key | length > 0
 
 # -------------------------------------------------------------------
-# 4. Grant sudo privileges (NOPASSWD optional)
+#  Grant sudo privileges (NOPASSWD optional)
 # -------------------------------------------------------------------
 - name: Ensure admin user has passwordless sudo
   copy:
