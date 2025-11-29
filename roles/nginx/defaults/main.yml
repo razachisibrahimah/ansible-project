@@ -22,8 +22,9 @@ nginx_web_root: "{{ nginx_root }}"
 # NETWORK / PORT CONFIGURATION
 # ---------------------------------------------------------
 
-nginx_listen_port: 80
-nginx_default_backend_port: 8080
+nginx_listen_port: "{{ lookup('env', 'NGINX_PORT') | int }}"
+
+nginx_default_backend_port: "{{ lookup('env', 'NGINX_BACKEND_PORT') | int }}"
 
 # Required by reverse-proxy.conf.j2 template
 nginx_proxy_backend_port: "{{ nginx_default_backend_port }}"

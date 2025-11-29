@@ -1,13 +1,39 @@
 ---
-# Main task file for Apache role
-# Supports:
-#   - Single mode (Apache only)
-#   - Proxy mode (Apache backend on custom port, e.g. 8080)
+# =====================================================================
+# Apache Role Main Tasks — STRICT ENV Validation
+# =====================================================================
 
-# Install Apache and dependencies
-- name: Load install tasks
+# ---------------------------------------------------------
+# Validate required Apache ENV variables BEFORE loading defaults
+# ---------------------------------------------------------
+- name: Validate Apache environment variables
+  fail:
+    msg: >
+      Missing or invalid Apache environment variables.
+
+      Required ENV vars:
+        - APACHE_PORT
+        - APACHE_BACKEND_PORT
+
+      Received:
+        APACHE_PORT={{ lookup('env','APACHE_PORT') | default('UNSET') }}
+        APACHE_BACKEND_PORT={{ lookup('env','APACHE_BACKEND_PORT') | default('UNSET') }}
+
+      Fix your .env file.
+  when:
+    - lookup('env','APACHE_PORT') is undefined
+      or lookup('env','APACHE_PORT') == ""
+      or lookup('env','APACHE_BACKEND_PORT') is undefined
+      or lookup('env','APACHE_BACKEND_PORT') == ""
+
+# ---------------------------------------------------------
+# Load installer for Apache
+# ---------------------------------------------------------
+- name: Load Apache install tasks
   include_tasks: install.yml
 
-# Configure Apache (single mode or backend mode)
-- name: Load configuration tasks
+# ---------------------------------------------------------
+# Load configuration logic
+# ---------------------------------------------------------
+- name: Load Apache configuration tasks
   include_tasks: configure.yml

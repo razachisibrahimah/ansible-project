@@ -1,15 +1,44 @@
 ---
-# Main task file for Nginx role
+# ========================================================================
+# Nginx Role Main Task File
 # Supports:
-#   Single mode (no proxy)
-#   Reverse proxy mode (nginx → apache backend)
+#    Single mode (no proxy)
+#    Reverse proxy mode (nginx → apache backend)
+#    Strict environment-driven ports
+# ========================================================================
 
-# Install Nginx and dependencies
+# ---------------------------------------------------------
+#  Validate required ENV variables BEFORE loading sub-tasks
+# ---------------------------------------------------------
+- name: Validate required Nginx ENV variables
+  fail:
+    msg: >
+      Missing or invalid Nginx environment variables.
+
+      Required ENV vars:
+        - NGINX_PORT
+        - NGINX_BACKEND_PORT
+
+      Received:
+        NGINX_PORT={{ lookup('env','NGINX_PORT') | default('UNSET') }}
+        NGINX_BACKEND_PORT={{ lookup('env','NGINX_BACKEND_PORT') | default('UNSET') }}
+
+      Fix your .env file.
+  when:
+    - lookup('env','NGINX_PORT') is undefined
+      or lookup('env','NGINX_PORT') == ""
+      or lookup('env','NGINX_BACKEND_PORT') is undefined
+      or lookup('env','NGINX_BACKEND_PORT') == ""
+
+
+# ---------------------------------------------------------
+#  Load installation tasks
+# ---------------------------------------------------------
 - name: Load install tasks
   include_tasks: install.yml
 
-# Configure Nginx depending on operation mode:
-#   Single: serve static index
-#   Proxy: reverse proxy to Apache backend port
+# ---------------------------------------------------------
+#  Load configuration tasks
+# ---------------------------------------------------------
 - name: Load configuration tasks
   include_tasks: configure.yml

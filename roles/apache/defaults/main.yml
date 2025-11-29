@@ -10,12 +10,12 @@ apache_packages:
 # Directory where Apache serves web content
 web_dir: "/var/www/html"
 
-# Default Apache listen port in single mode
-apache_port: 80
+# Apache listen port in single mode
+apache_port: "{{ lookup('env', 'APACHE_PORT') | default('80') | int }}"
 
 # Default backend port (used in reverse proxy mode)
 # Overridden by playbook variable: apache_backend_port
-apache_backend_default_port: 8080
+apache_backend_default_port: "{{ lookup('env', 'APACHE_BACKEND_PORT') | default('8080') | int }}"
 
 # Page metadata 
 index_title: "Apache Web Server"
