@@ -1,19 +1,62 @@
 ---
 # ---------------------------------------
-# Nginx Role Defaults
+# Nginx Role Defaults (Extended & Fixed)
 # ---------------------------------------
 
-# Packages required for Nginx web server
+# ---------------------------------------------------------
+# BASE PACKAGES
+# ---------------------------------------------------------
 nginx_packages:
   - nginx
 
-# Document root for Nginx (used only in single mode)
+# ---------------------------------------------------------
+# DOCUMENT ROOTS
+# ---------------------------------------------------------
+
 nginx_root: "/var/www/html"
 
-# Default backend port for reverse proxy mode
-# Can be overridden with nginx_proxy_backend_port from playbook
+# Required by configure.yml
+nginx_web_root: "{{ nginx_root }}"
+
+# ---------------------------------------------------------
+# NETWORK / PORT CONFIGURATION
+# ---------------------------------------------------------
+
+nginx_listen_port: 80
 nginx_default_backend_port: 8080
 
-# Metadata for index.html (single mode)
+# Required by reverse-proxy.conf.j2 template
+nginx_proxy_backend_port: "{{ nginx_default_backend_port }}"
+
+# ---------------------------------------------------------
+# METADATA FOR index.html (single mode)
+# ---------------------------------------------------------
+
 nginx_index_title: "Nginx Web Server"
 nginx_index_description: "This page is served directly by Nginx in single mode."
+
+# ---------------------------------------------------------
+# FILE LOCATIONS
+# ---------------------------------------------------------
+
+nginx_default_site: "/etc/nginx/sites-available/default"
+nginx_default_site_link: "/etc/nginx/sites-enabled/default"
+nginx_service_name: "nginx"
+
+# ---------------------------------------------------------
+# TEMPLATE FILENAMES (Required)
+# ---------------------------------------------------------
+
+# Used in `Deploy Nginx default config (single mode)`
+nginx_default_conf: "default.conf"
+
+# Used in `Deploy Nginx reverse proxy config (proxy mode)`
+nginx_proxy_conf: "reverse-proxy.conf"
+
+# ---------------------------------------------------------
+# MODE PORTS
+# ---------------------------------------------------------
+
+# Port Nginx listens on in SINGLE mode
+nginx_single_port: "{{ nginx_listen_port }}"
+

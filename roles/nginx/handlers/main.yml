@@ -1,15 +1,20 @@
 ---
 # Handlers for Nginx role
-# These handlers are triggered when templates or configs change.
+# These handlers are triggered ONLY when templates or configs actually change.
 
-- name: restart nginx
-  become: yes
-  service:
-    name: nginx
-    state: restarted
+# NOTE:
+#  reload nginx = preferred, does NOT interrupt existing connections
+#  restart nginx = only when explicitly triggered (e.g., port change, module enable)
 
 - name: reload nginx
   become: yes
   service:
     name: nginx
     state: reloaded
+
+# Safety-only. Not used normally.
+- name: restart nginx
+  become: yes
+  service:
+    name: nginx
+    state: restarted
