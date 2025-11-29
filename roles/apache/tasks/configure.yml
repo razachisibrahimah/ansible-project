@@ -1,14 +1,14 @@
 ---
-# Configure Apache for single mode (apache-only) or proxy backend mode
+# Configure Apache for single and proxy backend mode with idempotency
 
 - name: Set effective Apache port
   set_fact:
     apache_effective_port: "{{ apache_backend_port | default(apache_port) }}"
 
 # ---------------------------------------------------------
-#  STRICT RESET OF NGINX IN APACHE-ONLY MODE
+# STOP NGINX ONLY IN SINGLE APACHE MODE (idempotent)
 # ---------------------------------------------------------
-- name: Stop and disable Nginx in Apache-only mode
+- name: Disable Nginx in Apache-only mode (safe)
   become: yes
   service:
     name: nginx
@@ -18,7 +18,7 @@
   ignore_errors: yes
 
 # ---------------------------------------------------------
-#  Ensure document root exists
+# Ensure document root exists
 # ---------------------------------------------------------
 - name: Ensure Apache document root exists
   become: yes
@@ -28,48 +28,39 @@
     mode: "0755"
 
 # ---------------------------------------------------------
-#  Manage ports.conf via template (uses apache_effective_port)
+# Deploy ports.conf (idempotent template)
 # ---------------------------------------------------------
-- name: Deploy Apache ports.conf
+- name: Deploy ports.conf
   become: yes
   template:
     src: ports.conf.j2
     dest: /etc/apache2/ports.conf
     mode: "0644"
-  notify: restart apache
+  notify: reload apache
 
 # ---------------------------------------------------------
-#  Manage default vhost as template
+# Deploy vhost config (idempotent template)
 # ---------------------------------------------------------
-- name: Deploy Apache default vhost
+- name: Deploy 000-default.conf
   become: yes
   template:
     src: 000-default.conf.j2
     dest: /etc/apache2/sites-available/000-default.conf
     mode: "0644"
-  notify: restart apache
+  notify: reload apache
 
 # ---------------------------------------------------------
-#  Site enable/disable logic per mode
+# Ensure vhost symlink exists
 # ---------------------------------------------------------
-
-# Single Apache mode → enable default site (port 80)
-- name: Enable Apache default site in single-apache mode
+- name: Ensure Apache default site is enabled
   become: yes
-  command: a2ensite 000-default
-  when: apache_backend_port is not defined
-  notify: restart apache
-
-# Proxy mode → keep default site disabled (backend only on 8080)
-- name: Disable Apache default site in proxy mode
-  become: yes
-  command: a2dissite 000-default
-  when: apache_backend_port is defined
-  ignore_errors: yes
-  notify: restart apache
+  file:
+    src: /etc/apache2/sites-available/000-default.conf
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: link
 
 # ---------------------------------------------------------
-#  Ensure Apache running on the correct port
+# Ensure Apache running
 # ---------------------------------------------------------
 - name: Ensure Apache service is running and enabled
   become: yes
@@ -79,7 +70,7 @@
     enabled: yes
 
 # ---------------------------------------------------------
-#  Deploy index.html via template
+# Deploy index.html (idempotent)
 # ---------------------------------------------------------
 - name: Deploy Apache index.html
   become: yes
